@@ -30,4 +30,5 @@
 @property (nonatomic,retain) NSString *country;
 @property (nonatomic,retain) NSString *registertime;
 @property (nonatomic,retain) NSString *lastlogintime;
+@property (nonatomic,retain) NSString *promotionType;
 @end

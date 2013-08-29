@@ -7,7 +7,7 @@
 //
 
 #import "ChangePasswordViewController.h"
-
+#import "PostReturnValue.h"
 @interface ChangePasswordViewController ()
 
 @end
@@ -27,6 +27,11 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
     self.title = @"Reset Password Request";
+    
+    // init "POST" postToServerDataArray
+    postToServerDataArray = [[NSMutableArray alloc]initWithCapacity:0];
+    serverKeysArray = [[NSArray alloc]initWithObjects:@"user_name",@"email",nil];
+    
     _tableView = [[UITableView alloc]initWithFrame:CGRectMake(0, 0, 512, 768-44) style:UITableViewStyleGrouped];
     _tableView.delegate = self;
     _tableView.dataSource = self;
@@ -58,6 +63,37 @@
     textLableNames = [[NSMutableArray alloc]initWithObjects:settingsCell,nil];
 }
 -(void)submitAction{
+    [self.view endEditing:YES];
+    if([accountField.text isEqualToString:@""] ||[emailField.text isEqualToString:@""]){
+        UIAlertView *alertview = [[UIAlertView alloc]initWithTitle:nil message:@"The two items cann't be empty!" delegate:self cancelButtonTitle:@"Retry" otherButtonTitles:nil];
+        [alertview show];
+        [alertview release];
+        return;
+    }
+    [postToServerDataArray addObject:accountField.text];
+    [postToServerDataArray addObject:emailField.text];
+    NSDictionary *dict = [[NSDictionary alloc]initWithObjects:postToServerDataArray forKeys:serverKeysArray];
+    PostDataToServer *postServer = [[PostDataToServer alloc]init];
+    [postServer postServerDataMappingForClass:[PostReturnValue class] mappingsFromDictionary:@{@"status":@"returnValue"}
+                           appendingUrlString:@"Resetpass" postParameters:dict pathPattern:nil keyPath:nil Delegate:self];
+}
+#pragma mark ----PostServerDataDelegate
+-(void)postServerDataDidFinish:(NSArray *)serverData{
+    PostReturnValue *value = (PostReturnValue *)[serverData objectAtIndex:0];
+    NSLog(@"value.returnValue--->%@",value.returnValue);
+    if([value.returnValue isEqualToString:@"1"]){
+        alert = [[UIAlertView alloc]initWithTitle:nil message:@"Password reset application has been sent successfully, the administrator will contact you." delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+        [alert show];
+        [alert release];
+    }
+}
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
+    if(buttonIndex == 0){
+        accountField.text = @"";
+        emailField.text = @"";
+    }
+}
+-(void)postServerDateFailed{
     
 }
 #pragma mark -UITableViewDelegate,UITableViewDataSource
@@ -91,6 +127,7 @@
     {
         accountField = [[UITextField alloc]initWithFrame:CGRectMake(180, 2, 301, 40)];
         accountField.text = @"";
+        accountField.textColor = [UIColor colorWithRed:0.1176f green:0.5569f blue:0.8745f alpha:1.0f];
         accountField.borderStyle = UITextBorderStyleBezel;
         accountField.autocapitalizationType = UITextAutocapitalizationTypeNone;
         [oneCell addSubview:accountField];
@@ -100,8 +137,8 @@
     {
         emailField = [[UITextField alloc]initWithFrame:CGRectMake(180, 2, 301, 40)];
         emailField.text = @"";
+        emailField.textColor = [UIColor colorWithRed:0.1176f green:0.5569f blue:0.8745f alpha:1.0f];
         emailField.borderStyle = UITextBorderStyleBezel;
-        emailField.secureTextEntry = YES;
         emailField.autocapitalizationType = UITextAutocapitalizationTypeNone;
         [oneCell addSubview:emailField];
         [emailField release];

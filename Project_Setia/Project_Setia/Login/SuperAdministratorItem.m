@@ -19,7 +19,7 @@
 @synthesize repassword;
 @synthesize storename;
 @synthesize chainname;
-@synthesize chainId,storeId,phone1number,phone2number,birthday,email,gender,country,registertime,lastlogintime;
+@synthesize chainId,storeId,phone1number,phone2number,birthday,email,gender,country,registertime,lastlogintime,promotionType;
 -(void)dealloc
 {
     self.userId = nil;
@@ -42,6 +42,7 @@
     self.country = nil;
     self.registertime = nil;
     self.lastlogintime = nil;
+    self.promotionType = nil;
     [super dealloc];
 }
 @end

@@ -17,7 +17,9 @@
     
     NSArray *dataArray;
     GetServerData *serverDataGetter;
+    GetServerData *serverDataGetter_promotionType;
     SuperAdministratorItem *superAdminItem;
+    int getterNum;
     
     UIAlertView *alert;
     NSUserDefaults *defaults;

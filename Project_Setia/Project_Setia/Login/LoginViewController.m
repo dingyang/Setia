@@ -42,6 +42,9 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
     
+    //设置getterNum,区分getter;
+    getterNum = 1;
+    
     dataArray = [[NSArray alloc]init];
     
     settingsTableView = [[UITableView alloc]initWithFrame:CGRectMake(0, 0, 512, 768-44) style:UITableViewStyleGrouped];
@@ -75,7 +78,7 @@
     UIButton *pwButton = [UIButton buttonWithType:UIButtonTypeCustom];
     pwButton.frame = CGRectMake(32, 200, 150, 40);
     [pwButton addTarget:self action:@selector(resetPasswordAction) forControlEvents:UIControlEventTouchUpInside];
-    [pwButton setTitle:@"Forget password?" forState:UIControlStateNormal];
+    [pwButton setTitle:@"Forgot password?" forState:UIControlStateNormal];
 //    [pwButton.titleLabel setTextColor:[UIColor colorWithRed:0.1294f green:0.4353f blue:0.7608f alpha:1.0f]];
 //    [pwButton setTintColor:[UIColor colorWithRed:0.1294f green:0.4353f blue:0.7608f alpha:1.0f]];
     [pwButton setTitleColor:[UIColor colorWithRed:0.1294f green:0.4353f blue:0.7608f alpha:1.0f] forState:UIControlStateNormal];
@@ -115,7 +118,7 @@
     
     NSString *loginStr = [NSString stringWithFormat:@"%@%@%@%@%@",@"User/user_name:",accountField.text,@",password:",passwordField.text,@".json"];
     serverDataGetter = [[GetServerData alloc]init];
-    [serverDataGetter getServerDataMappingForClass:[SuperAdministratorItem class]mappingsFromDictionary:@{@"id": @"userId",@"type": @"type",@"country_code": @"code",@"phone_number1": @"phone1number",@"phone_number2": @"phone2number",@"firstname": @"firstname",@"lastname": @"lastname",@"birthday": @"birthday",@"email": @"email",@"gender": @"gender",@"country": @"country",@"password": @"password",@"registertime": @"registertime",@"merchant_id": @"chainId",@"merchant_name": @"chainname",@"store_id": @"storeId",@"store_name": @"storename",@"user_name": @"username",} pathPattern:nil keyPath:@"user" appendingUrlString:loginStr Delegate:self];
+    [serverDataGetter getServerDataMappingForClass:[SuperAdministratorItem class]mappingsFromDictionary:@{@"id": @"userId",@"type": @"type",@"country_code": @"code",@"phone_number1": @"phone1number",@"phone_number2": @"phone2number",@"firstname": @"firstname",@"lastname": @"lastname",@"birthday": @"birthday",@"email": @"email",@"gender": @"gender",@"country": @"country",@"password": @"password",@"registertime": @"registertime",@"merchant_id": @"chainId",@"merchant_name": @"chainname",@"store_id": @"storeId",@"store_name": @"storename",@"user_name": @"username"} pathPattern:nil keyPath:@"user" appendingUrlString:loginStr Delegate:self];
         //添加指示器
         activiter = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
          activiter.frame = CGRectMake(200, 200, 100, 100);
@@ -125,29 +128,51 @@
 }
 #pragma mark -ServerDataDelegate
 -(void)getServerDataDidFinish:(NSArray *)serverData{
-    dataArray = [serverData copy];
-    superAdminItem = (SuperAdministratorItem*)[dataArray objectAtIndex:0];
-    MainViewController *mainVcl = [[MainViewController alloc]init];
-    mainVcl.roleValue = [superAdminItem.type integerValue];
-    NSLog(@"mainVcl.roleValue----->%d",mainVcl.roleValue);
-    [defaults setInteger:mainVcl.roleValue forKey:@"roleValue"];
-    [defaults setObject:superAdminItem.chainname forKey:@"chainname"];
-    [defaults setObject:superAdminItem.chainId forKey:@"chainid"];
-    NSLog(@"superAdminItem.chainId--->%@",superAdminItem.chainId);
-    [defaults setObject:superAdminItem.storename forKey:@"storename"];
-    NSLog(@"storename----->%@",[defaults objectForKey:@"storename"]);
-    [defaults setObject:superAdminItem.storeId forKey:@"storeid"];
-    NSLog(@"superAdminItem.storeId--->%@",superAdminItem.storeId);
-    [defaults setObject:superAdminItem.firstname forKey:@"firstname"];
-    [defaults setObject:superAdminItem.lastname forKey:@"lastname"];
-    [defaults setObject:superAdminItem.code forKey:@"countrycode"];
-    [defaults setObject:superAdminItem.email forKey:@"email"];
-    [defaults setObject:superAdminItem.phone1number forKey:@"phone1"];
-    [defaults setObject:superAdminItem.phone2number forKey:@"phone2"];
-    
-    [activiter stopAnimating];
-    
-    [self presentViewController:mainVcl animated:YES completion:nil];
+    getterNum ++;
+    NSLog(@"getterNum---->%d",getterNum);
+    if(getterNum%2 == 0){
+        dataArray = [serverData copy];
+        superAdminItem = (SuperAdministratorItem*)[dataArray objectAtIndex:0];
+        MainViewController *mainVcl = [[MainViewController alloc]init];
+        mainVcl.roleValue = [superAdminItem.type integerValue];
+        NSLog(@"mainVcl.roleValue----->%d",mainVcl.roleValue);
+        [defaults setObject:superAdminItem.type forKey:@"usertype"];//获取用户身份
+        [defaults setObject:superAdminItem.userId forKey:@"userid"];
+        [defaults setInteger:mainVcl.roleValue forKey:@"roleValue"];
+        [defaults setObject:superAdminItem.chainname forKey:@"chainname"];
+        [defaults setObject:superAdminItem.chainId forKey:@"chainid"];
+        NSLog(@"superAdminItem.chainId--->%@",superAdminItem.chainId);
+        [defaults setObject:superAdminItem.storename forKey:@"storename"];
+        NSLog(@"storename----->%@",[defaults objectForKey:@"storename"]);
+        [defaults setObject:superAdminItem.storeId forKey:@"storeid"];
+        NSLog(@"superAdminItem.storeId--->%@",superAdminItem.storeId);
+        [defaults setObject:superAdminItem.firstname forKey:@"firstname"];
+        [defaults setObject:superAdminItem.lastname forKey:@"lastname"];
+        [defaults setObject:superAdminItem.code forKey:@"countrycode"];
+        [defaults setObject:superAdminItem.email forKey:@"email"];
+        [defaults setObject:superAdminItem.phone1number forKey:@"phone1"];
+        [defaults setObject:superAdminItem.phone2number forKey:@"phone2"];
+        
+        //每次登陆完毕要重新设置promotionType
+        [defaults setObject:@"" forKey:@"promotionType"];
+        
+        [activiter stopAnimating];
+        [self presentViewController:mainVcl animated:YES completion:nil];
+        //每一次登陆完毕之后都要申请一次promotionType;
+        if([[NSUserDefaults standardUserDefaults] objectForKey:@"chainname"] != nil)
+        {
+            NSString *loginStr = [NSString stringWithFormat:@"%@%@%@",@"Merchant/name:",[[NSUserDefaults standardUserDefaults] objectForKey:@"chainname"],@".json"];
+            serverDataGetter_promotionType = [[GetServerData alloc]init];
+            [serverDataGetter_promotionType getServerDataMappingForClass:[SuperAdministratorItem class]mappingsFromDictionary:@{@"promotion_type": @"promotionType"} pathPattern:nil keyPath:@"merchant" appendingUrlString:loginStr Delegate:self];
+        }else{
+            getterNum ++;
+        }
+    }else{
+        dataArray = [serverData copy];
+        superAdminItem = (SuperAdministratorItem*)[dataArray objectAtIndex:0];
+        [defaults setObject:superAdminItem.promotionType forKey:@"promotionType"];
+        NSLog(@"superAdminItem.promotionType--->%@",[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"]);
+    }
 }
 -(void)getServerDateFailed{
     [activiter stopAnimating];

@@ -1,8 +1,8 @@
 //
-//  SalePurchaseViewController.h
+//  SalePurchasePrepaidViewController.h
 //  Project_Setia
 //
-//  Created by Ding Yang on 8/5/13.
+//  Created by Ding Yang on 22/7/13.
 //  Copyright (c) 2013 Ding Yang. All rights reserved.
 //
 
@@ -10,7 +10,7 @@
 #import "CustomerItem.h"
 #import "SaleItem.h"
 #import "PostDataToServer.h"
-@interface SalePurchaseViewController : UIViewController<UITableViewDataSource,UITableViewDelegate,UITextFieldDelegate,PostServerDataDelegate,UIScrollViewDelegate>
+@interface SalePurchasePrepaidViewController : UIViewController<UITableViewDataSource,UITableViewDelegate,UITextFieldDelegate,PostServerDataDelegate,UIScrollViewDelegate>
 {
     NSMutableArray *purchaseCellArray;
     UITextField *detailField;
@@ -19,24 +19,22 @@
     
     UITableViewCell *firstnameCell;
     UITableViewCell *lastnameCell;
-    UITableViewCell *discountCell;
+    UITableViewCell *pointsCell;
     UITableViewCell *storeCell;
     UITableViewCell *userCell;
     UITableViewCell *grossAmountCell;
-    UITableViewCell *netAmountCell;
     UITableViewCell *commentCell;
     
     UITextField *firstnameField;
     UITextField *lastnameField;
-    UITextField *discountField;
+    UITextField *pointsField;
     UITextField *storeField;
     UITextField *userField;
     UITextField *grossAmountField;
-    UITextField *netAmountField;
     UITextView *commentsTextView;
     
     NSMutableArray *isHasContent;
-
+    
 }
 @property (nonatomic,retain) CustomerItem *customerItem;
 @property (nonatomic,retain) UITableView *PurchaseTableView;

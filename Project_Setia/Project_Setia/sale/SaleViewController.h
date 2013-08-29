@@ -12,7 +12,11 @@
 #import "CustomerCellView.h"
 #import "CustomerItem.h"
 #import "SalePurchaseViewController.h"
-@interface SaleViewController : UIViewController<UITableViewDataSource,UITableViewDelegate,ServerDataDelegate>
+#import "SalePurchasePointsViewController.h"
+#import "SalePurchasePrepaidViewController.h"
+#import "TopUpView.h"
+#import "PutDataToServer.h"
+@interface SaleViewController : UIViewController<UITableViewDataSource,UITableViewDelegate,ServerDataDelegate,PutServerDataDelegate,UIAlertViewDelegate>
 {
     NSMutableArray *leftCellArray;
     NSMutableArray *rightCellArray;
@@ -38,6 +42,12 @@
     BOOL isQuerySuccessful;
     
     SalePurchaseViewController *salePurchaseVcl;
+    SalePurchasePointsViewController *salePurchasePointsVcl;
+    SalePurchasePrepaidViewController *salePurchasePrepaidVcl;
+    
+    TopUpView *topView;
+    UIButton *topUpButton;
+    UIAlertView *prepaidAlert;
 }
 @property (nonatomic,retain) CustomerItem *customerItem;
 @property (nonatomic,retain) UITableView *leftTableView;

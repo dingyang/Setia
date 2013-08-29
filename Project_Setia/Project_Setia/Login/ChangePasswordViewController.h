@@ -7,12 +7,16 @@
 //
 
 #import <UIKit/UIKit.h>
-
-@interface ChangePasswordViewController : UIViewController<UITableViewDataSource,UITableViewDelegate>{
+#import "PostDataToServer.h"
+@interface ChangePasswordViewController : UIViewController<UITableViewDataSource,UITableViewDelegate,PostServerDataDelegate,UIAlertViewDelegate>{
     NSMutableArray *textLableNames;
     
     UITextField *accountField;
     UITextField *emailField;
+    
+    NSMutableArray *postToServerDataArray;
+    NSArray *serverKeysArray;
+    UIAlertView *alert;
     
 }
 @property (nonatomic,retain) UITableView *_tableView;

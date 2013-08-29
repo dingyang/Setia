@@ -1,18 +1,18 @@
 //
-//  SalePurchaseViewController.m
+//  SalePurchasePointsViewController.m
 //  Project_Setia
 //
-//  Created by Ding Yang on 8/5/13.
+//  Created by Ding Yang on 19/7/13.
 //  Copyright (c) 2013 Ding Yang. All rights reserved.
 //
 
-#import "SalePurchaseViewController.h"
+#import "SalePurchasePointsViewController.h"
 #import "PostDataToServer.h"
 #import "PostReturnValue.h"
-@interface SalePurchaseViewController ()
+@interface SalePurchasePointsViewController ()
 @end
 
-@implementation SalePurchaseViewController
+@implementation SalePurchasePointsViewController
 @synthesize PurchaseTableView;
 @synthesize customerItem;
 @synthesize saleItem;
@@ -35,6 +35,7 @@
     self.comments = nil;
     self.customerPhoneNumber = nil;
     self.customerCountryCode = nil;
+
     [super dealloc];
 }
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -59,25 +60,24 @@
     PurchaseTableView.scrollEnabled = NO;
     [self.view addSubview:PurchaseTableView];
     [PurchaseTableView release];
-    
+        
     //初始化静态UITableViewCell;
     [self initUITableViewCell];
-    
     //初始化post到server端的数组 和 server端的字段数组
     postToServerDataArray = [[NSMutableArray alloc]initWithCapacity:0];
     serverKeysArray = [[NSArray alloc]initWithObjects:@"customer_id",@"customer_firstname",@"customer_lastname",@"discount",@"store_name",@"user_name",@"total_amount",@"actual_amount",@"date_entered",@"merchant_name",@"merchant_id",@"store_id",@"customer_countrycode",@"customer_phonenumber",nil];
     
-    NSMutableArray *purchaseCell = [[NSMutableArray alloc]initWithObjects:@"Customer firstname",@"Customer lastname",@"Discount",@"Store",@"User",@"Purchase amount that qualifies for discount",@"Net Amount (actual amount transacted)",@"Comments",nil];
+    NSMutableArray *purchaseCell = [[NSMutableArray alloc]initWithObjects:@"Customer firstname",@"Customer lastname",@"Balance Points before this transaction",@"Store",@"User",@"Purchase amount that qualifies for discount",@"Points that offset the price of this purchase",@"Net Amount (actual amount transacted)",@"Points redeemed",@"Comments",nil];
     purchaseCellArray = [[NSMutableArray alloc]initWithObjects:purchaseCell,nil];
     
-    UIImageView *setiaImageView = [[UIImageView alloc]initWithFrame:CGRectMake(35,768-44-35-189, 169, 169)];
+    UIImageView *setiaImageView = [[UIImageView alloc]initWithFrame:CGRectMake(35,768-44-35-180, 169, 169)];
     [setiaImageView setImage:[UIImage imageNamed:@"logo-setia.png"]];
     [self.view addSubview:setiaImageView];
     [setiaImageView release];
     
     UIButton *makeSaleButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [makeSaleButton setBackgroundImage:[UIImage imageNamed:@"btn-make-sale-orange.png"] forState:UIControlStateNormal];
-    makeSaleButton.frame = CGRectMake(682, 768-44-35-252, 300, 40);
+    makeSaleButton.frame = CGRectMake(682, 768-44-35-166, 300, 40);
     [makeSaleButton addTarget:self action:@selector(makeSale) forControlEvents:UIControlEventTouchUpInside];
     [PurchaseTableView addSubview:makeSaleButton];
     
@@ -95,7 +95,6 @@
     PurchaseTableView.scrollEnabled = YES;
     [UIView commitAnimations];
 }
-
 -(void)keyboardWillHide:(NSNotification*)noti{
     [UIView beginAnimations:nil context:nil];
     [UIView setAnimationDuration:0.25];
@@ -106,22 +105,35 @@
 -(void)resignKeyBoard{
     [detailField resignFirstResponder];
 }
+#pragma mark ----makeSale
 -(void)makeSale{
     [self.view endEditing:YES];
+    if ([pointsField.text intValue]< [pointsOffsettingField.text intValue]) {
+        UIAlertView *alert = [[UIAlertView alloc]initWithTitle:nil message:@"Points that offset the price of this purchase shouldn't be more than Balance Points before this transaction!"  delegate:self cancelButtonTitle:@"Retry" otherButtonTitles:nil];
+        [alert show];
+        [alert release];
+        return;
+    }
     if(self.customerId!=nil){
         [postToServerDataArray addObject:self.customerId];
     }else{
         [postToServerDataArray addObject:@""];
     }
-    for (int i=100; i<=106; i++) {
+    for (int i=100; i<=105; i++) {
+        if (i==102) {
+            [postToServerDataArray addObject:[NSString stringWithFormat:@"%d",[pointsField.text intValue]-[pointsOffsettingField.text intValue]+ [pointsRedeemedField.text intValue]]];
+        }else{
         UITextField *tf = (UITextField *)[self.view viewWithTag:i];
         [postToServerDataArray addObject:tf.text];
+        }
     }
-    UITextView *tv = (UITextView*)[self.view viewWithTag:107];
+    [postToServerDataArray addObject:netAmountField.text];
+    
+    UITextView *tv = (UITextView*)[self.view viewWithTag:109];
     [postToServerDataArray addObject:tv.text];
     //add chainname
     if([[NSUserDefaults standardUserDefaults]objectForKey:@"chainname"]!=nil){
-    [postToServerDataArray addObject:[[NSUserDefaults standardUserDefaults]objectForKey:@"chainname"]];
+        [postToServerDataArray addObject:[[NSUserDefaults standardUserDefaults]objectForKey:@"chainname"]];
     }else{
         [postToServerDataArray addObject:@""];
     }
@@ -153,7 +165,7 @@
     NSDictionary *dict = [[NSDictionary alloc]initWithObjects:postToServerDataArray forKeys:serverKeysArray];
     PostDataToServer *postServer = [[PostDataToServer alloc]init];
     [postServer postServerDataMappingForClass:[PostReturnValue class] mappingsFromDictionary:@{@"status":@"returnValue"}
-                       appendingUrlString:@"Trx" postParameters:dict pathPattern:nil keyPath:nil Delegate:self];
+                           appendingUrlString:@"Trx" postParameters:dict pathPattern:nil keyPath:nil Delegate:self];
     [postToServerDataArray removeAllObjects];
 }
 #pragma mark ----PostServerDataDelegate
@@ -170,7 +182,7 @@
     [alart show];
     [alart release];
 }
-#pragma mark---UITableViewDataSource,UITableViewDelegate
+#pragma mark ---UITableViewDataSource,UITableViewDelegate
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
     return [purchaseCellArray count];
@@ -183,7 +195,7 @@
     return 40;
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    if(indexPath.row == 7)
+    if(indexPath.row == 9)
         return 80;
     else
         return 43;
@@ -191,58 +203,65 @@
 -(NSString*)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
     return @"General";
 }
+
 -(UITableViewCell*)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (indexPath.row == 0) {
-        firstnameCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return firstnameCell;
-    }else if(indexPath.row == 1){
-        lastnameCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return lastnameCell;
-    }else if(indexPath.row == 2){
-        discountCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return discountCell;
-    }else if(indexPath.row == 3){
-        storeCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return storeCell;
-    }else if(indexPath.row == 4){
-        userCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return userCell;
-    }else if(indexPath.row == 5){
-        if (![[isHasContent objectAtIndex:indexPath.row] intValue]) {
-            grossAmountField.placeholder = @"Input purchase amount";
+        if (indexPath.row == 0) {
+            firstnameCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return firstnameCell;
+        }else if(indexPath.row == 1){
+            lastnameCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return lastnameCell;
+        }else if(indexPath.row == 2){
+            pointsCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return pointsCell;
+        }else if(indexPath.row == 3){
+            storeCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return storeCell;
+        }else if(indexPath.row == 4){
+            userCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return userCell;
+        }else if(indexPath.row == 5){
+            if (![[isHasContent objectAtIndex:indexPath.row] intValue]) {
+                grossAmountField.placeholder = @"Input purchase amount";
+            }
+            grossAmountCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return grossAmountCell;
+        }else if(indexPath.row == 6){
+            pointsOffsettingCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return pointsOffsettingCell;
+        }else if(indexPath.row == 7){
+            if (![[isHasContent objectAtIndex:indexPath.row] intValue]) {
+                netAmountField.placeholder = @"Input net amount";
+            }
+            netAmountCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return netAmountCell;
+        }else if(indexPath.row == 8){
+            pointsRedeemedCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+                return pointsRedeemedCell;
         }
-        grossAmountCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return grossAmountCell;
-    }else if(indexPath.row == 6){
-        netAmountCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return netAmountCell;
-    }
-    else{
-        commentCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-        return commentCell;
-    }
+        else{
+            commentCell.textLabel.text = [[purchaseCellArray objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+            return commentCell;
+    }    
 }
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
     [tableView deselectRowAtIndexPath:indexPath animated:NO];
 }
-#pragma mark---UITextFieldDelegate
 -(void)textFieldDidEndEditing:(UITextField *)textField{
-    //NSLog(@"textFieldDidEndEditing");
-    
     [isHasContent replaceObjectAtIndex:textField.tag+100 withObject:[NSNumber numberWithBool:YES]];
-    UITextField *discountAmountTF = (UITextField*)[self.view viewWithTag:102];
-    UITextField *purchaseAmountTF = (UITextField*)[self.view viewWithTag:105];
-    UITextField *netAmountTF = (UITextField*)[self.view viewWithTag:106];
-    if(textField == purchaseAmountTF){
-        netAmountTF.text = [NSString stringWithFormat:@"%.2f",[discountAmountTF.text floatValue]*[purchaseAmountTF.text floatValue]];
+    UITextField *netAmountTF = (UITextField*)[self.view viewWithTag:107];
+    if(textField == netAmountTF){
+        UITextField *pointsRedeemedTF = (UITextField*)[self.view viewWithTag:108];
+        pointsRedeemedTF.text =netAmountTF.text;
     }
 }
 -(void)scrollViewDidScroll:(UIScrollView *)scrollView{
-//    if(PurchaseTableView.contentOffset.y>140 || PurchaseTableView.contentOffset.y<-1){
+//    if(PurchaseTableView.contentOffset.y >= 187 || PurchaseTableView.contentOffset.y <=-1){
 //        PurchaseTableView.scrollEnabled = NO;
 //        [self performSelector:@selector(setTableViewScrolled) withObject:nil afterDelay:0.01];
 //    }
+//    NSLog(@"%f",PurchaseTableView.contentOffset.y);
 }
 -(void)setTableViewScrolled{
     PurchaseTableView.scrollEnabled = YES;
@@ -280,19 +299,19 @@
     lastnameField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
     [lastnameField release];
     
-    discountCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"] ;
-    discountCell.selectionStyle = UITableViewCellSelectionStyleNone;
-    discountField = [[UITextField alloc]initWithFrame:CGRectMake(762, 12, 300, 25)];
-    [discountCell addSubview:discountField];
+    pointsCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"] ;
+    pointsCell.selectionStyle = UITableViewCellSelectionStyleNone;
+    pointsField = [[UITextField alloc]initWithFrame:CGRectMake(762, 12, 300, 25)];
+    [pointsCell addSubview:pointsField];
     if(self.discount != nil)
-        discountField.text = self.discount;
+        pointsField.text = self.discount;
     else
-        discountField.text = @"";
-    discountField.delegate = self;
-    discountField.enabled = NO;
-    discountField.tag = 102;
-    discountField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
-    [discountField release];
+        pointsField.text = @"0";
+    pointsField.enabled = NO;
+    pointsField.delegate = self;
+    pointsField.tag = 102;
+    pointsField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
+    [pointsField release];
     
     storeCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"];
     storeCell.selectionStyle = UITableViewCellSelectionStyleNone;
@@ -329,17 +348,37 @@
     grossAmountField.tag = 105;
     grossAmountField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
     [grossAmountField release];
-        
+    
+    pointsOffsettingCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"];
+    pointsOffsettingCell.selectionStyle = UITableViewCellSelectionStyleNone;
+    pointsOffsettingField= [[UITextField alloc]initWithFrame:CGRectMake(762, 12, 300, 25)];
+    [pointsOffsettingCell addSubview:pointsOffsettingField];
+    pointsOffsettingField.text = @"";
+    pointsOffsettingField.delegate = self;
+    pointsOffsettingField.tag = 106;
+    pointsOffsettingField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
+    [pointsOffsettingField release];
+    
     netAmountCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"];
     netAmountCell.selectionStyle = UITableViewCellSelectionStyleNone;
     netAmountField= [[UITextField alloc]initWithFrame:CGRectMake(762, 12, 300, 25)];
     [netAmountCell addSubview:netAmountField];
     netAmountField.text = @"";
     netAmountField.delegate = self;
-    netAmountField.tag = 106;
+    netAmountField.tag = 107;
     netAmountField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
     [netAmountField release];
-        
+    
+    pointsRedeemedCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"];
+    pointsRedeemedCell.selectionStyle = UITableViewCellSelectionStyleNone;
+    pointsRedeemedField= [[UITextField alloc]initWithFrame:CGRectMake(762, 12, 300, 25)];
+    [pointsRedeemedCell addSubview:pointsRedeemedField];
+    pointsRedeemedField.text = @"";
+    pointsRedeemedField.delegate = self;
+    pointsRedeemedField.tag = 108;
+    pointsRedeemedField.textColor = [UIColor colorWithRed:0.25f green:0.376f blue:0.67f alpha:1.0f];
+    [pointsRedeemedField release];
+    
     commentCell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"leftcell"];
     commentCell.selectionStyle = UITableViewCellSelectionStyleNone;
     commentsTextView = [[UITextView alloc]initWithFrame:CGRectMake(662, 0, 300, 80)];
@@ -347,12 +386,13 @@
     commentsTextView.font = [UIFont systemFontOfSize:18];
     commentsTextView.backgroundColor = [UIColor clearColor];
     commentsTextView.text = @"";
-    commentsTextView.tag = 107;
+    commentsTextView.tag = 109;
     [commentCell addSubview:commentsTextView];
     [commentsTextView release];
     
-    for (int i=100; i<107; i++) {
+    for (int i=100; i<109; i++) {
 		[isHasContent addObject:[NSNumber numberWithBool:NO]];
 	}
 }
+
 @end
