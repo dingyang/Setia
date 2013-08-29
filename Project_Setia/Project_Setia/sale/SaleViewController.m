@@ -9,9 +9,6 @@
 #import "SaleViewController.h"
 #import "SalePurchaseViewController.h"
 #import "RestKit/RestKit.h"
-#import "TopUpView.h"
-#import "PutDataToServer.h"
-#import "PutReturnValue.h"
 @interface SaleViewController ()
 
 @end
@@ -92,16 +89,6 @@
     [saleButton addTarget:self action:@selector(purchaseAction) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:saleButton];
     
-    if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"] isEqual:@"Prepaid"]){
-        topUpButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        topUpButton.frame = CGRectMake(35, 220, 280, 40);
-        //[topUpButton setBackgroundImage:[UIImage imageNamed:@"btn_sale.png"] forState:UIControlStateNormal];
-        topUpButton.enabled = NO;
-        [topUpButton setTitle:@"Top Up" forState:UIControlStateNormal];
-        [topUpButton addTarget:self action:@selector(topUpAction) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:topUpButton];
-    }
-    
     UIImageView *setiaImageView = [[UIImageView alloc]initWithFrame:CGRectMake(35,768-44-35-189, 169, 169)];
     [setiaImageView setImage:[UIImage imageNamed:@"logo-setia.png"]];
     [self.view addSubview:setiaImageView];
@@ -119,51 +106,10 @@
     
     //初始化SalePurchaseViewController
     //salePurchaseVcl = [[SalePurchaseViewController alloc]init];
+}
+-(void)queryAction
+{
     
-    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(removeTopUpView) name:@"closeTopUpView" object:nil];
-    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(prepaidAction) name:@"prepay" object:nil];
-}
--(void)removeTopUpView{
-    [topView removeFromSuperview];
-}
--(void)prepaidAction{
-    prepaidAlert = [[UIAlertView alloc]initWithTitle:nil message:[[NSString alloc] initWithFormat:@"Will prepay %@ to %@ %@'s account?",topView.prepaidTF.text,customerItem.cus_Firstname,customerItem.cus_Lastname] delegate:self cancelButtonTitle:@"Sure" otherButtonTitles:@"Cancel",nil];
-    [prepaidAlert show];
-    [prepaidAlert release];
-    
-
-}
--(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex{
-    if (alertView == prepaidAlert && buttonIndex == 0) {
-        NSString *pathStr = [[NSString alloc]initWithFormat:@"http://198.199.107.25/API/Points/customer_id:%@,merchant_id:%@.json",customerItem.cus_LoginId,[[NSUserDefaults standardUserDefaults] objectForKey:@"chainid"]];
-        NSDictionary *params = [[NSDictionary alloc]initWithObjects:[NSArray arrayWithObjects:topView.prepaidTF.text,nil] forKeys:[NSArray arrayWithObjects:@"new_points", nil]];
-        PutDataToServer *putServer = [[PutDataToServer alloc]init];
-        
-        [putServer putServerDataMappingForClass:[PutReturnValue class] mappingsFromDictionary:@{@"status":@"returnValue"} urlString:@"http://198.199.107.25/API/Points/" postParameters:params pathPattern:nil keyPath:pathStr Delegate:self];
-        [topView removeFromSuperview];
-    }
-    
-}
--(void)putServerDataDidFinish:(NSArray *)serverData{
-    dataArray = [serverData copy];
-    PutReturnValue *value = (PutReturnValue *)[serverData objectAtIndex:0];
-    NSLog(@"value.returnValue--->%@",value.returnValue);
-    int points = [value.returnValue intValue];
-    if (points>0) {
-       UIAlertView *alert = [[UIAlertView alloc]initWithTitle:nil message:@"Prepaid successfully!" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles: nil];
-        [alert show];
-        [alert release];
-        customerItem.cus_Discount = value.returnValue;
-    }else{
-        UIAlertView *alert = [[UIAlertView alloc]initWithTitle:nil message:@"Prepaid Failed,Please retry!" delegate:self cancelButtonTitle:@"Ok" otherButtonTitles: nil];
-        [alert show];
-        [alert release];
-    }
-    
-}
--(void)topUpAction{
-    topView = [[TopUpView alloc]initWithFrame:CGRectMake(0, 0, 1024, 733)];
-    [self.view addSubview:topView];    
 }
 -(void)queryCustomer
 {
@@ -192,8 +138,6 @@
     }
     if(isQueryBtnPressed == 1)
     {
-        topUpButton.enabled = NO;//查询完毕后，禁用充值按钮；
-        
         codeField.text = @"65";
         phoneField.text = @"";
         firstNameField.text = @"";
@@ -203,19 +147,11 @@
         mobileField.text = @"";
         dateField.text = @"";
         isQueryBtnPressed =0;
-        
-        if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"] isEqual:@"Fixed discount"]){
-              customerItem.cus_Discount = @"1";
-        }else{
-            customerItem.cus_Discount = @"0";
-        }
         return;
     }
 }
 -(void)getServerDataDidFinish:(NSArray *)serverData{
     isQuerySuccessful = YES;
-    //能查到有此会员才能，充值；
-    topUpButton.enabled = YES;
     dataArray = [serverData copy];
     customerItem = (CustomerItem*)[dataArray objectAtIndex:0];
     NSLog(@"customerItem.cus_Discount--->%@",customerItem.cus_Discount);
@@ -233,57 +169,20 @@
     isQuerySuccessful = NO;
 }
 -(void)purchaseAction{
-    if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"] isEqual:@"Fixed discount"]){
-        salePurchaseVcl = [[SalePurchaseViewController alloc]init];
-        if(isQuerySuccessful == YES){
-            salePurchaseVcl.customerId = customerItem.cus_LoginId;
-            salePurchaseVcl.customerFirstName = firstNameField.text;
-            salePurchaseVcl.customerLastName = lastNameField.text;
-            if (customerItem.cus_Discount != nil) {
-                salePurchaseVcl.discount = customerItem.cus_Discount;
-            }else{
-                salePurchaseVcl.discount = @"";
-            }
-        }
-        salePurchaseVcl.customerCountryCode = codeField.text;
-        salePurchaseVcl.customerPhoneNumber = phoneField.text;
-        salePurchaseVcl.store = [[NSUserDefaults standardUserDefaults] objectForKey:@"storename"];
-        salePurchaseVcl.user = [[NSUserDefaults standardUserDefaults] objectForKey:@"account"];
-        
-        [self.navigationController pushViewController:salePurchaseVcl animated:YES];
-        [self performSelector:@selector(removeData) withObject:nil afterDelay:0.5];
-    }else if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"] isEqual:@"Points"]){
-        salePurchasePointsVcl = [[SalePurchasePointsViewController alloc]init];
-        if(isQuerySuccessful == YES){
-            salePurchasePointsVcl.customerId = customerItem.cus_LoginId;
-            salePurchasePointsVcl.customerFirstName = firstNameField.text;
-            salePurchasePointsVcl.customerLastName = lastNameField.text;
-            salePurchasePointsVcl.discount = customerItem.cus_Discount;
-        }
-        salePurchasePointsVcl.customerCountryCode = codeField.text;
-        salePurchasePointsVcl.customerPhoneNumber = phoneField.text;
-        salePurchasePointsVcl.store = [[NSUserDefaults standardUserDefaults] objectForKey:@"storename"];
-        salePurchasePointsVcl.user = [[NSUserDefaults standardUserDefaults] objectForKey:@"account"];
-        
-        [self.navigationController pushViewController:salePurchasePointsVcl animated:YES];
-        [self performSelector:@selector(removeData) withObject:nil afterDelay:0.5];
-
-    }else if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"promotionType"] isEqual:@"Prepaid"]){
-        salePurchasePrepaidVcl = [[SalePurchasePrepaidViewController alloc]init];
-        if(isQuerySuccessful == YES){
-            salePurchasePrepaidVcl.customerId = customerItem.cus_LoginId;
-            salePurchasePrepaidVcl.customerFirstName = firstNameField.text;
-            salePurchasePrepaidVcl.customerLastName = lastNameField.text;
-            salePurchasePrepaidVcl.discount = customerItem.cus_Discount;
-        }
-        salePurchasePrepaidVcl.customerCountryCode = codeField.text;
-        salePurchasePrepaidVcl.customerPhoneNumber = phoneField.text;
-        salePurchasePrepaidVcl.store = [[NSUserDefaults standardUserDefaults] objectForKey:@"storename"];
-        salePurchasePrepaidVcl.user = [[NSUserDefaults standardUserDefaults] objectForKey:@"account"];
-        
-        [self.navigationController pushViewController:salePurchasePrepaidVcl animated:YES];
-        [self performSelector:@selector(removeData) withObject:nil afterDelay:0.5];
+    salePurchaseVcl = [[SalePurchaseViewController alloc]init];
+    if(isQuerySuccessful == YES){
+        salePurchaseVcl.customerId = customerItem.cus_LoginId;
+        salePurchaseVcl.customerFirstName = firstNameField.text;
+        salePurchaseVcl.customerLastName = lastNameField.text;
+        salePurchaseVcl.discount = customerItem.cus_Discount;
     }
+    salePurchaseVcl.customerCountryCode = codeField.text;
+    salePurchaseVcl.customerPhoneNumber = phoneField.text;
+    salePurchaseVcl.store = [[NSUserDefaults standardUserDefaults] objectForKey:@"storename"];
+    salePurchaseVcl.user = [[NSUserDefaults standardUserDefaults] objectForKey:@"account"];
+    
+    [self.navigationController pushViewController:salePurchaseVcl animated:YES];
+    [self performSelector:@selector(removeData) withObject:nil afterDelay:0.5];
 }
 -(void)removeData{
     
